@@ -1,0 +1,88 @@
+SELECT COUNT(*) FROM `project-leducthinh-2024.DA04_K300.ageinc_g` LIMIT 1000
+--   "f0_": "1000"
+-- Tìm k??? k= log10(1000 rows) = 3 >>> k=3, k=4
+
+SELECT * FROM `project-leducthinh-2024.DA04_K300.ageinc_g` LIMIT 3
+SELECT income_new,age FROM `project-leducthinh-2024.DA04_K300.ageinc_g` LIMIT 3
+
+
+-- k=3
+CREATE OR REPLACE MODEL `project-leducthinh-2024.DA04_K300.ageinc_g_clustering_3`
+OPTIONS(MODEL_TYPE = 'kmeans',
+        num_clusters = 3) 
+AS
+SELECT 
+  income_new,
+  age
+FROM `project-leducthinh-2024.DA04_K300.ageinc_g`
+
+-- k=4
+CREATE OR REPLACE MODEL `project-leducthinh-2024.DA04_K300.ageinc_g_clustering_4`
+OPTIONS(MODEL_TYPE = 'kmeans',
+        num_clusters = 4) 
+AS
+SELECT 
+  income_new,
+  age
+FROM `project-leducthinh-2024.DA04_K300.ageinc_g`
+
+
+
+-- PHƯƠNG ÁN 2 : MM
+  -- K=3
+CREATE OR REPLACE MODEL `project-leducthinh-2024.DA04_K300.ageinc_g_clustering_mm_3`
+OPTIONS(MODEL_TYPE = 'kmeans',
+        num_clusters = 3) 
+AS
+SELECT 
+  ML.MIN_MAX_SCALER(income) OVER() AS income_mm,
+  ML.MIN_MAX_SCALER(age) OVER() AS age_mm
+FROM `project-leducthinh-2024.DA04_K300.ageinc_g`
+
+  -- K=4
+CREATE OR REPLACE MODEL `project-leducthinh-2024.DA04_K300.ageinc_g_clustering_mm_4`
+OPTIONS(MODEL_TYPE = 'kmeans',
+        num_clusters = 4) 
+AS
+SELECT 
+  ML.MIN_MAX_SCALER(income) OVER() AS income_mm,
+  ML.MIN_MAX_SCALER(age) OVER() AS age_mm
+FROM `project-leducthinh-2024.DA04_K300.ageinc_g`
+
+
+
+
+SELECT CENTROID_ID, income_mm, age_mm,income,age
+FROM
+  ML.PREDICT(MODEL `project-leducthinh-2024.DA04_K300.ageinc_g_clustering_mm_4`,
+  (SELECT 
+  ML.MIN_MAX_SCALER(income) OVER() AS income_mm,
+  ML.MIN_MAX_SCALER(age) OVER() AS age_mm, age,income
+FROM `project-leducthinh-2024.DA04_K300.ageinc_g` ))
+
+
+
+-- SAVE CSV >>> Trực quan lên python
+
+
+
+-- Make new prediction
+SELECT *
+FROM ML.PREDICT(
+  MODEL `project-leducthinh-2024.DA04_K300.ageinc_g_clustering_mm_4`,
+  (
+    SELECT 
+      ML.MIN_MAX_SCALER(income) OVER() AS income_mm,
+      ML.MIN_MAX_SCALER(age) OVER() AS age_mm,
+      age,
+      income
+    FROM (
+      SELECT 100000 AS income, 40 AS age
+      UNION ALL
+      SELECT 80000, 27
+      UNION ALL
+      SELECT 55000, 50
+    )
+  )
+)
+
