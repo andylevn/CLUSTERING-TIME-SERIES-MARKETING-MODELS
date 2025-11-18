@@ -1,0 +1,46 @@
+-- Show data
+
+SELECT *
+FROM `project-leducthinh-2024.DA04_K300.electric_production`
+WHERE EXTRACT(YEAR FROM DATE_) >=1985
+ORDER BY DATE_
+LIMIT 5
+
+-- XÂY MODEL
+CREATE OR REPLACE MODEL `project-leducthinh-2024.DA04_K300.electric_production_arima_model`
+OPTIONS
+  (MODEL_TYPE = 'ARIMA_PLUS',
+   TIME_SERIES_TIMESTAMP_COL = 'DATE_',
+   TIME_SERIES_DATA_COL = 'IPG2211A2N')
+AS
+SELECT 
+  DATE_, IPG2211A2N
+FROM `project-leducthinh-2024.DA04_K300.electric_production`
+WHERE EXTRACT( YEAR FROM DATE_) >=1985
+ORDER BY DATE_
+
+
+--EVALUATE
+SELECT*
+FROM
+  ML.ARIMA_EVALUATE(MODEL `project-leducthinh-2024.DA04_K300.electric_production_arima_model`)
+
+-- CO-EFFICIENTS
+SELECT *
+FROM
+  ML.ARIMA_COEFFICIENTS( MODEL `project-leducthinh-2024.DA04_K300.electric_production_arima_model`)
+
+
+SELECT *
+FROM
+  ML.FORECAST(MODEL`project-leducthinh-2024.DA04_K300.electric_production_arima_model`,
+  STRUCT (12 AS horizon, 0.8 AS confidence_level))
+
+
+-- EXPLAIN
+SELECT *
+FROM
+ML.EXPLAIN_FORECAST(MODEL`project-leducthinh-2024.DA04_K300.electric_production_arima_model`,
+  STRUCT (12 AS horizon, 0.8 AS confidence_level))
+ 
+
